@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lineage II Map</title>
+<style>
+.slidecontainer {
+  margin: 10px 0;
+  width: 100%;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 15px;
+  border-radius: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #04AA6D;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #04AA6D;
+  cursor: pointer;
+}
+
+
+#mapcontainer {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 55px);
+  border: 1px solid #ccc;
+}
+
+.player {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 2px solid red;
+}
+
+#pagetitle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: black;
+  display: block;
+  font-family: -apple-system,"BlinkMacSystemFont",
+	"Segoe UI","Helvetica","Arial",sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  text-rendering: optimizeLegibility;
+}
+
+#pagetitle h1 {
+	font-size: 22px;
+	padding: 0;margin: 0;
+}
+
+#pagetitle h3 {
+	font-size: 16px;
+	padding: 0;margin: 0;
+}
+</style>
+</head>
+<body>
+    <div>
+        
+        <div id="mapcontainer" class="mapcontainer">
+			<span id="pagetitle">
+				<h1>Lineage II Map v2</h1>
+				<h3>by Nick</h3>
+			</span>
+          <canvas id="map" alt="map" />
+        </div>
+        <div class="slidecontainer">
+          <input type="range" min="1" max="100" value="25" step="0.2" class="slider" id="slider">
+        </div>
+    </div>
+    <script>
+    
+        let userX = 116532,
+            userY = 76268;
+              
+        const BLOCKSIZE = 32768, 
+              BLOCKPX = 900;
+        const WorldToBlockNum = (n) => (n >= 0) ? n / BLOCKSIZE : n / BLOCKSIZE - 1,
+              WorldToPic = (n, zoom = 1) => (WorldToBlockNum(n) % 1) * BLOCKPX * zoom;
+        
+        
+        const slider = document.getElementById("slider"),
+            container = document.getElementById("mapcontainer"),
+            map = document.getElementById("map"),
+            ctx = map.getContext("2d"),
+            player = document.createElement("div");
+            cachedTiles = new Array(70).fill(undefined).map(() => new Array(70).fill(undefined));
+        
+        // Draw player
+        player.className = "player";
+        container.appendChild(player);    
+            
+        const redraw = () => {
+            // Clear canvas
+            ctx.clearRect(0, 0, map.width, map.height);
+            
+            const zoom = slider.value * 10 / slider.max,
+                  rect = container.getBoundingClientRect();
+            map.width = rect.width;
+            map.height = rect.height;
+            
+            
+            const offsetX = WorldToPic(userX, zoom), 
+                  offsetY = WorldToPic(userY, zoom),
+                  halfWidth = rect.width / 2,
+                  halfHeight = rect.height / 2,
+                  realWidth = BLOCKPX * zoom,
+                  realHeight = BLOCKPX * zoom,
+                  tileX = Math.floor(WorldToBlockNum(userX)) + 20,
+                  tileY = Math.floor(WorldToBlockNum(userY)) + 18;
+
+            // Position the player in the center
+            player.style.top = `${halfHeight - player.style.width / 2}px`;
+            player.style.left = `${halfWidth - player.style.height / 2}px`;
+
+            // Draw the visible map grid
+            for(let i = tileX - Math.ceil((halfWidth + offsetX) / realWidth);
+                    i <= tileX + Math.ceil((halfWidth - offsetX) / realWidth) + 1; i++) {
+                for(let j = tileY - Math.ceil((halfHeight - offsetY) / realHeight);
+                    j <= tileY + Math.ceil((halfHeight + offsetY) / realHeight) - 1; j++) {
+                    
+                    if (i >= 16 && i <= 26 && j >= 10 && j <= 25) {
+                        if (typeof cachedTiles[i][j] === "object" && 
+						    null !== cachedTiles[i][j] && 
+							cachedTiles[i][j].complete) {
+						    // Tile is already in the cache (memory)
+                            ctx.drawImage(cachedTiles[i][j], 
+                                halfWidth - offsetX - (realWidth * (tileX - i)), 
+                                halfHeight - offsetY - (realHeight * (tileY - j)), 
+                                realWidth, 
+                                realHeight);
+
+                        } else {
+                            // Load the background image
+                            cachedTiles[i][j] = new Image();
+                            cachedTiles[i][j].src = `./Maps/${i}_${j}.jpg`;
+                            cachedTiles[i][j].onload = function() {
+                                ctx.drawImage(cachedTiles[i][j], 
+                                    halfWidth - offsetX - (realWidth * (tileX - i)), 
+                                    halfHeight - offsetY - (realHeight * (tileY - j)), 
+                                    realWidth, 
+                                    realHeight);
+                            }
+							cachedTiles[i][j].onerror = function() {
+								cachedTiles[i][j] = null;
+							}
+                        }
+                    }
+            
+                }
+            }
+
+        };
+        
+        
+        window.onresize =
+        window.onload = 
+        slider.oninput = redraw;
+        
+		map.onclick = (e) => {
+			const zoom = slider.value * 10 / slider.max,
+			      rect = e.target.getBoundingClientRect(),
+			      mouseX = e.clientX - rect.left,
+				  mouseY = e.clientY - rect.top,
+				  halfWidth = rect.width / 2,
+                  halfHeight = rect.height / 2;
+
+			userX += (BLOCKSIZE / BLOCKPX) * (mouseX - halfWidth) / zoom;
+			userY += (BLOCKSIZE / BLOCKPX) * (mouseY - halfHeight) / zoom;
+
+		    redraw();
+		};
+		
+    </script>
+</body>
+</html>
