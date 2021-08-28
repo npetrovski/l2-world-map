@@ -40,7 +40,7 @@
         width: 25px;
         height: 25px;
         border-radius: 50%;
-        background: #830c20;
+        background: #a8a135;
         cursor: pointer;
       }
 
@@ -48,7 +48,7 @@
         width: 25px;
         height: 25px;
         border-radius: 50%;
-        background: #04aa6d;
+        background: #a8a135;
         cursor: pointer;
       }
 
@@ -82,27 +82,21 @@
         text-rendering: optimizeLegibility;
       }
 
-      #pagetitle h1 {
-        font-size: 22px;
-        padding: 0;
-        margin: 0;
-      }
-
-      #pagetitle h3 {
-        font-size: 16px;
-        padding: 0;
-        margin: 0;
+      .logo {
+        display: block;
+        background: url("./logo.png") no-repeat;
+        width: 450px;
+        height: 130px;
       }
     </style>
   </head>
   <body>
     <div id="mapcontainer" class="mapcontainer">
       <span id="pagetitle">
-        <h1>Lineage II Map v2</h1>
-        <h3>by Nick</h3>
+        <div class="logo"></div>
       </span>
       <div class="slidecontainer">
-        <input type="range" min="1" max="100" value="25" step="0.2" class="slider" id="slider" />
+        <input type="range" min="1" max="100" value="15" step="0.2" class="slider" id="slider" />
       </div>
       <canvas id="map" alt="map"></canvas>
     </div>
