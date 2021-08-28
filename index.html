@@ -21,17 +21,14 @@
 
       .slider {
         -webkit-appearance: none;
-        width: 100%;
+        width: 95%;
         height: 2px;
+        display: block;
         background: #d3d3d3;
         outline: none;
-        opacity: 0.7;
+        margin: 10px auto;
         -webkit-transition: 0.2s;
         transition: opacity 0.2s;
-      }
-
-      .slider:hover {
-        opacity: 1;
       }
 
       .slider::-webkit-slider-thumb {
@@ -40,15 +37,15 @@
         width: 25px;
         height: 25px;
         border-radius: 50%;
-        background: #a8a135;
+        background: #333;
         cursor: pointer;
       }
 
       .slider::-moz-range-thumb {
-        width: 25px;
+        width: 10px;
         height: 25px;
-        border-radius: 50%;
-        background: #a8a135;
+        border-radius: 5%;
+        background: #333;
         cursor: pointer;
       }
 
@@ -85,8 +82,9 @@
       .logo {
         display: block;
         background: url("./logo.png") no-repeat;
-        width: 450px;
-        height: 130px;
+        background-size: contain;
+        height: 100px;
+        width: 350px;
       }
     </style>
   </head>
@@ -121,6 +119,8 @@
         player = document.createElement("div");
       cachedTiles = new Array(70).fill(undefined).map(() => new Array(70).fill(undefined));
 
+      let zoom = 1;
+
       // Draw player
       player.className = "player";
       container.appendChild(player);
@@ -130,8 +130,8 @@
         // Clear canvas
         ctx.clearRect(0, 0, map.width, map.height);
 
-        const zoom = (slider.value * 10) / slider.max,
-          rect = container.getBoundingClientRect();
+        zoom = (slider.value * 10) / slider.max;
+        const rect = container.getBoundingClientRect();
         map.width = rect.width;
         map.height = rect.height;
 
@@ -194,8 +194,8 @@
       window.onresize = window.onload = slider.oninput = redraw;
 
       map.onclick = (e) => {
-        const zoom = (slider.value * 10) / slider.max,
-          rect = e.target.getBoundingClientRect(),
+        zoom = (slider.value * 10) / slider.max;
+        const rect = e.target.getBoundingClientRect(),
           mouseX = e.clientX - rect.left,
           mouseY = e.clientY - rect.top,
           halfWidth = rect.width / 2,
@@ -206,6 +206,15 @@
 
         redraw();
       };
+
+      function onContainerMouseWheel(event) {
+        event = event ? event : window.event;
+        slider.value = slider.value - (event.detail ? event.detail * -1 : event.wheelDelta / 8);
+        redraw();
+      }
+
+      window.addEventListener("mousewheel", onContainerMouseWheel);
+      window.addEventListener("DOMMouseScroll", onContainerMouseWheel);
     </script>
   </body>
 </html>
