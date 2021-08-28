@@ -209,12 +209,39 @@
 
       function onContainerMouseWheel(event) {
         event = event ? event : window.event;
-        slider.value = slider.value - (event.detail ? event.detail * -1 : event.wheelDelta / 8);
+        slider.value -= event.detail ? event.detail * -1 : event.wheelDelta / 8;
         redraw();
       }
 
       window.addEventListener("mousewheel", onContainerMouseWheel);
       window.addEventListener("DOMMouseScroll", onContainerMouseWheel);
+
+      let hypo = undefined;
+      window.addEventListener(
+        "touchmove",
+        function (event) {
+          if (event.targetTouches.length === 2) {
+            let hypo1 = Math.hypot(
+              event.targetTouches[0].pageX - event.targetTouches[1].pageX,
+              event.targetTouches[0].pageY - event.targetTouches[1].pageY
+            );
+            if (hypo === undefined) {
+              hypo = hypo1;
+            }
+            slider.value -= hypo1 / hypo;
+          }
+        },
+        false
+      );
+
+      window.addEventListener(
+        "touchend",
+        function (event) {
+          hypo = undefined;
+          redraw();
+        },
+        false
+      );
     </script>
   </body>
 </html>
