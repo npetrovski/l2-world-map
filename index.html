@@ -2,8 +2,12 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, target-densitydpi=device-dpi"
+    />
     <title>Lineage II Map</title>
+    <link rel="shortcut icon" href="https://www.lineage2.com/images/global/favicon.png" />
     <style>
       body {
         padding: 0;
@@ -103,7 +107,11 @@
         userY = 148600;
 
       const BLOCKSIZE = 32768,
-        BLOCKPX = 900;
+        BLOCKPX = 900,
+        BLOCKLIMITS = {
+          X: { min: 16, max: 26, mid: 19 },
+          Y: { min: 10, max: 25, mid: 17 },
+        };
 
       const WorldToBlockNum = (n) => n / BLOCKSIZE,
         WorldToPic = (n, zoom = 1) => {
@@ -126,7 +134,24 @@
       container.appendChild(player);
 
       const redraw = () => {
+        if (userX > BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid)) {
+          userX = BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid);
+        }
+
+        if (userX < BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid - 1)) {
+          userX = BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid - 1);
+        }
+
+        if (userY > BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid)) {
+          userY = BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid);
+        }
+
+        if (userY < BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid - 1)) {
+          userY = BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid - 1);
+        }
+
         console.log(userX, userY);
+
         // Clear canvas
         ctx.clearRect(0, 0, map.width, map.height);
 
@@ -159,7 +184,7 @@
             j <= tileY + Math.ceil((halfHeight + offsetY) / realHeight) - 1;
             j++
           ) {
-            if (i >= 16 && i <= 26 && j >= 10 && j <= 25) {
+            if (i >= BLOCKLIMITS.X.min && i <= BLOCKLIMITS.X.max && j >= BLOCKLIMITS.Y.min && j <= BLOCKLIMITS.Y.max) {
               if (typeof cachedTiles[i][j] === "object" && null !== cachedTiles[i][j] && cachedTiles[i][j].complete) {
                 // Tile is already in the cache (memory)
                 ctx.drawImage(
@@ -183,7 +208,8 @@
                   );
                 };
                 cachedTiles[i][j].onerror = function () {
-                  cachedTiles[i][j] = null;
+                  // cachedTiles[i][j] = null;
+                  cachedTiles[i][j].src = "https://dummyimage.com/900x900/ffffff/dddddd.png&text=No+map+image";
                 };
               }
             }
@@ -220,11 +246,9 @@
       window.addEventListener(
         "touchmove",
         function (event) {
-          if (event.targetTouches.length === 2) {
-            let hypo1 = Math.hypot(
-              event.targetTouches[0].pageX - event.targetTouches[1].pageX,
-              event.targetTouches[0].pageY - event.targetTouches[1].pageY
-            );
+          let touches = event.targetTouches;
+          if (touches.length === 2) {
+            let hypo1 = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
             if (hypo === undefined) {
               hypo = hypo1;
             }
