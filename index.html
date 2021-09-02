@@ -109,8 +109,8 @@
       const BLOCKSIZE = 32768,
         BLOCKPX = 900,
         BLOCKLIMITS = {
-          X: { min: 16, max: 26, mid: 19 },
-          Y: { min: 10, max: 25, mid: 17 },
+          X: { min: 16, max: 26, mid: 20 },
+          Y: { min: 10, max: 25, mid: 18 },
         };
 
       const WorldToBlockNum = (n) => n / BLOCKSIZE,
@@ -125,7 +125,9 @@
         map = document.getElementById("map"),
         ctx = map.getContext("2d"),
         player = document.createElement("div");
-      cachedTiles = new Array(70).fill(undefined).map(() => new Array(70).fill(undefined));
+      cachedTiles = new Array(BLOCKLIMITS.X.max + 1)
+        .fill(undefined)
+        .map(() => new Array(BLOCKLIMITS.Y.max + 1).fill(undefined));
 
       let zoom = 1;
 
@@ -134,24 +136,23 @@
       container.appendChild(player);
 
       const redraw = () => {
-        if (userX > BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid)) {
-          userX = BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid);
+        if (userX > BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid + 1)) {
+          userX = BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid + 1);
         }
 
-        if (userX < BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid - 1)) {
-          userX = BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid - 1);
+        if (userX < BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid)) {
+          userX = BLOCKSIZE * (BLOCKLIMITS.X.min - BLOCKLIMITS.X.mid);
         }
 
-        if (userY > BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid)) {
-          userY = BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid);
+        if (userY > BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid + 1)) {
+          userY = BLOCKSIZE * (BLOCKLIMITS.Y.max - BLOCKLIMITS.Y.mid + 1);
         }
 
-        if (userY < BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid - 1)) {
-          userY = BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid - 1);
+        if (userY < BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid)) {
+          userY = BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid);
         }
 
         console.log(userX, userY);
-
         // Clear canvas
         ctx.clearRect(0, 0, map.width, map.height);
 
@@ -166,8 +167,8 @@
           halfHeight = rect.height / 2,
           realWidth = BLOCKPX * zoom,
           realHeight = BLOCKPX * zoom,
-          tileX = Math.floor(WorldToBlockNum(userX)) + 20,
-          tileY = Math.floor(WorldToBlockNum(userY)) + 18;
+          tileX = Math.floor(WorldToBlockNum(userX)) + BLOCKLIMITS.X.mid,
+          tileY = Math.floor(WorldToBlockNum(userY)) + BLOCKLIMITS.Y.mid;
 
         // Position the player in the center
         player.style.top = `${halfHeight - player.style.width / 2}px`;
@@ -196,9 +197,10 @@
                 );
               } else {
                 // Load the background image
-                cachedTiles[i][j] = new Image();
-                cachedTiles[i][j].src = `./Maps/${i}_${j}.jpg`;
-                cachedTiles[i][j].onload = function () {
+                const img = new Image();
+                img.src = `./Maps/${i}_${j}.jpg`;
+                img.onload = function () {
+                  cachedTiles[i][j] = img;
                   ctx.drawImage(
                     cachedTiles[i][j],
                     halfWidth - offsetX - realWidth * (tileX - i),
@@ -207,9 +209,9 @@
                     realHeight
                   );
                 };
-                cachedTiles[i][j].onerror = function () {
+                img.onerror = function () {
                   // cachedTiles[i][j] = null;
-                  cachedTiles[i][j].src = "https://dummyimage.com/900x900/ffffff/dddddd.png&text=No+map+image";
+                  img.src = "https://dummyimage.com/900x900/ffffff/dddddd.png&text=No+map+image";
                 };
               }
             }
@@ -247,12 +249,16 @@
         "touchmove",
         function (event) {
           let touches = event.targetTouches;
+          touches = [
+            { pageX: touches[0].pageX, pageY: touches[0].pageY },
+            { pageX: 0, pageY: 0 },
+          ];
           if (touches.length === 2) {
             let hypo1 = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
             if (hypo === undefined) {
               hypo = hypo1;
             }
-            slider.value -= hypo1 / hypo;
+            slider.value *= hypo1 / hypo;
           }
         },
         false
