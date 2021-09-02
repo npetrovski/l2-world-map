@@ -249,10 +249,6 @@
         "touchmove",
         function (event) {
           let touches = event.targetTouches;
-          touches = [
-            { pageX: touches[0].pageX, pageY: touches[0].pageY },
-            { pageX: 0, pageY: 0 },
-          ];
           if (touches.length === 2) {
             let hypo1 = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
             if (hypo === undefined) {
