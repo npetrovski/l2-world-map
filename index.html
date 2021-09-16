@@ -65,18 +65,22 @@
         width: 100vw;
       }
 
-      .player {
+      .creature {
         position: absolute;
         width: 5px;
         height: 5px;
       }
 
-      .player.me {
+      .creature.player {
         border: 2px solid red;
       }
 
-      .player.npc {
+      .creature.npc {
         border: 2px solid yellow;
+      }
+
+      .creature.selected {
+        border: 2px solid #8785db;
       }
 
       #pagetitle {
@@ -97,6 +101,33 @@
         height: 100px;
         width: 350px;
       }
+
+      #info {
+        position: absolute;
+        right: 1rem;
+        bottom: 2.6rem;
+        display: block;
+        min-width: 16rem;
+        background-color: rgba(70, 70, 70, 0.5);
+        color: gold;
+        padding: 0.5rem;
+        font-size: 0.825rem;
+      }
+
+      #info dl {
+        display: grid;
+        grid-template-columns: 30% auto;
+        margin: 0;
+      }
+
+      #info dt {
+        grid-column: 1;
+      }
+
+      #info dd {
+        grid-column: 2;
+        text-align: right;
+      }
     </style>
   </head>
   <body>
@@ -105,11 +136,12 @@
         <div class="logo"></div>
       </span>
       <div class="slidecontainer">
-        <input type="range" min="1" max="100" value="15" step="0.2" class="slider" id="slider" />
+        <input type="range" min="1" max="100" value="25" step="0.2" class="slider" id="slider" />
       </div>
       <canvas id="map" alt="map"></canvas>
-      <div id="player" class="player me"></div>
+      <div id="player" class="creature player"></div>
       <div id="npc_layer"></div>
+      <div id="info"></div>
     </div>
     <script>
       let userX = 83120,
@@ -139,6 +171,39 @@
       cachedTiles = new Array(BLOCKLIMITS.X.max + 1)
         .fill(undefined)
         .map(() => new Array(BLOCKLIMITS.Y.max + 1).fill(undefined));
+
+      const updateInfo = (data) => {
+        const info = document.getElementById("info"),
+          dl = document.createElement("dl"),
+          addRow = (label, value) => {
+            let dt = document.createElement("dt");
+            dt.appendChild(document.createTextNode(label));
+            dl.appendChild(dt);
+
+            let dd = document.createElement("dd");
+            dd.appendChild(document.createTextNode(value));
+            dl.appendChild(dd);
+          };
+
+        addRow("Tile X", Math.floor(WorldToBlockNum(userX)) + BLOCKLIMITS.X.mid);
+        addRow("Tile Y", Math.floor(WorldToBlockNum(userY)) + BLOCKLIMITS.Y.mid);
+        addRow("Player X pos", Math.round(userX));
+        addRow("Player Y pos", Math.round(userY));
+        addRow("Zoom", zoom.toPrecision(4));
+        addRow("Visible NPCs", npcCount);
+
+        if (selectedNPC) {
+          addRow("NPC Name", selectedNPC.name);
+          addRow("NPC X pos", selectedNPC.xpos);
+          addRow("NPC Y pos", selectedNPC.ypos);
+        }
+
+        info.innerHTML = "";
+        info.appendChild(dl);
+      };
+
+      let npcCount = 0;
+      let selectedNPC = null;
 
       let zoom = 1;
 
@@ -225,7 +290,7 @@
           }
         }
 
-        // Draw NPCs
+        // Draw NPCs.
         const visibleCoords = {
           top: userY - (halfHeight * (BLOCKSIZE / BLOCKPX)) / zoom,
           left: userX - (halfWidth * (BLOCKSIZE / BLOCKPX)) / zoom,
@@ -234,26 +299,37 @@
         };
 
         npc_layer.innerHTML = ""; // clean-up the NPC layer
-        npcList.forEach((npc) => {
-          // we do not want to render NPC that are not visible on screen
-          if (
+
+        // We do not want to render NPC that are not visible on screen
+        const visibleNpcList = npcList.filter(
+          (npc) =>
             npc.xpos >= visibleCoords.left &&
             npc.xpos <= visibleCoords.right &&
             npc.ypos >= visibleCoords.top &&
             npc.ypos <= visibleCoords.bottom
-          ) {
-            const npcOffsetX = ((userX - npc.xpos) / (BLOCKSIZE / BLOCKPX)) * zoom,
-              npcOffsetY = ((userY - npc.ypos) / (BLOCKSIZE / BLOCKPX)) * zoom;
+        );
 
-            const npcDom = document.createElement("div");
-            npcDom.className = "player npc";
-            npcDom.title = npc.name;
-            npc_layer.appendChild(npcDom);
+        npcCount = visibleNpcList.length;
 
-            npcDom.style.left = `${halfWidth - npcOffsetX - npcDom.style.width / 2}px`;
-            npcDom.style.top = `${halfHeight - npcOffsetY - npcDom.style.height / 2}px`;
-          }
+        visibleNpcList.forEach((npc) => {
+          const npcOffsetX = ((userX - npc.xpos) / (BLOCKSIZE / BLOCKPX)) * zoom,
+            npcOffsetY = ((userY - npc.ypos) / (BLOCKSIZE / BLOCKPX)) * zoom;
+
+          const npcDom = document.createElement("div");
+          npcDom.className = "creature npc";
+          npcDom.title = npc.name;
+          npc_layer.appendChild(npcDom);
+          npcDom.addEventListener("click", (e) => {
+            e.stopPropagation();
+            selectedNPC = npc;
+            updateInfo();
+          });
+
+          npcDom.style.left = `${halfWidth - npcOffsetX - npcDom.style.width / 2}px`;
+          npcDom.style.top = `${halfHeight - npcOffsetY - npcDom.style.height / 2}px`;
         });
+
+        updateInfo();
       };
 
       window.onresize = window.onload = slider.oninput = redraw;
