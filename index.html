@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -172,38 +172,33 @@
         .fill(undefined)
         .map(() => new Array(BLOCKLIMITS.Y.max + 1).fill(undefined));
 
-      const updateInfo = (data) => {
-        const info = document.getElementById("info"),
-          dl = document.createElement("dl"),
-          addRow = (label, value) => {
-            let dt = document.createElement("dt");
-            dt.appendChild(document.createTextNode(label));
-            dl.appendChild(dt);
-
-            let dd = document.createElement("dd");
-            dd.appendChild(document.createTextNode(value));
-            dl.appendChild(dd);
-          };
-
-        addRow("Tile X", Math.floor(WorldToBlockNum(userX)) + BLOCKLIMITS.X.mid);
-        addRow("Tile Y", Math.floor(WorldToBlockNum(userY)) + BLOCKLIMITS.Y.mid);
-        addRow("Player X pos", Math.round(userX));
-        addRow("Player Y pos", Math.round(userY));
-        addRow("Zoom", zoom.toPrecision(4));
-        addRow("Visible NPCs", npcCount);
-
-        if (selectedNPC) {
-          addRow("NPC Name", selectedNPC.name);
-          addRow("NPC X pos", selectedNPC.xpos);
-          addRow("NPC Y pos", selectedNPC.ypos);
-        }
-
-        info.innerHTML = "";
-        info.appendChild(dl);
+      const Info = function _() {
+        return `
+              <dl>
+                ${(_.state.hasOwnProperty("tx") && `<dt>Tile X</dt><dd>${_.state.tx}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("ty") && `<dt>Tile Y</dt><dd>${_.state.ty}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("ux") && `<dt>Player X pos</dt><dd>${_.state.ux}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("uy") && `<dt>Player Y pos</dt><dd>${_.state.uy}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("zoom") && `<dt>Zoom</dt><dd>${_.state.zoom}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("vt") && `<dt>Visible Tiles</dt><dd>${_.state.vt}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("vn") && `<dt>Visible NPCs</dt><dd>${_.state.vn}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("npcName") && `<dt>NPC Name</dt><dd>${_.state.npcName}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("npcX") && `<dt>NPC X pos</dt><dd>${_.state.npcX}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("npcY") && `<dt>NPC Y pos</dt><dd>${_.state.npcY}</dd>`) || ""}
+              </dl>
+            `;
       };
 
-      let npcCount = 0;
-      let selectedNPC = null;
+      Info.state = {};
+      Info.render = () => {
+        document.getElementById("info").innerHTML = Info();
+      };
+      Info.setState = (newState) => {
+        Info.state = Object.assign(Info.state, newState);
+        Info.render();
+      };
+
+      Info.render();
 
       let zoom = 1;
 
@@ -224,11 +219,13 @@
           userY = BLOCKSIZE * (BLOCKLIMITS.Y.min - BLOCKLIMITS.Y.mid);
         }
 
-        // console.log(userX, userY);
+        Info.setState({ ux: Math.round(userX), uy: Math.round(userY) });
+
         // Clear canvas
         ctx.clearRect(0, 0, map.width, map.height);
 
         zoom = (slider.value * 10) / slider.max;
+        Info.setState({ zoom: zoom.toPrecision(4) });
         const rect = container.getBoundingClientRect();
         map.width = rect.width;
         map.height = rect.height;
@@ -242,9 +239,13 @@
           tileX = Math.floor(WorldToBlockNum(userX)) + BLOCKLIMITS.X.mid,
           tileY = Math.floor(WorldToBlockNum(userY)) + BLOCKLIMITS.Y.mid;
 
+        Info.setState({ tx: tileX, ty: tileY });
+
         // Position the player in the center
         player.style.top = `${halfHeight - player.style.width / 2}px`;
         player.style.left = `${halfWidth - player.style.height / 2}px`;
+
+        let tilesCount = 0;
 
         // Draw the visible map grid
         for (
@@ -258,6 +259,7 @@
             j++
           ) {
             if (i >= BLOCKLIMITS.X.min && i <= BLOCKLIMITS.X.max && j >= BLOCKLIMITS.Y.min && j <= BLOCKLIMITS.Y.max) {
+              tilesCount++;
               if (typeof cachedTiles[i][j] === "object" && null !== cachedTiles[i][j] && cachedTiles[i][j].complete) {
                 // Tile is already in the cache (memory)
                 ctx.drawImage(
@@ -290,6 +292,8 @@
           }
         }
 
+        Info.setState({ vt: tilesCount });
+
         // Draw NPCs.
         const visibleCoords = {
           top: userY - (halfHeight * (BLOCKSIZE / BLOCKPX)) / zoom,
@@ -309,7 +313,7 @@
             npc.ypos <= visibleCoords.bottom
         );
 
-        npcCount = visibleNpcList.length;
+        Info.setState({ vn: visibleNpcList.length });
 
         visibleNpcList.forEach((npc) => {
           const npcOffsetX = ((userX - npc.xpos) / (BLOCKSIZE / BLOCKPX)) * zoom,
@@ -321,15 +325,12 @@
           npc_layer.appendChild(npcDom);
           npcDom.addEventListener("click", (e) => {
             e.stopPropagation();
-            selectedNPC = npc;
-            updateInfo();
+            Info.setState({ npcName: npc.name, npcX: npc.xpos, npcY: npc.ypos });
           });
 
           npcDom.style.left = `${halfWidth - npcOffsetX - npcDom.style.width / 2}px`;
           npcDom.style.top = `${halfHeight - npcOffsetY - npcDom.style.height / 2}px`;
         });
-
-        updateInfo();
       };
 
       window.onresize = window.onload = slider.oninput = redraw;
