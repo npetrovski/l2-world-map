@@ -393,7 +393,7 @@
             if (hypo === undefined) {
               hypo = hypo1;
             }
-            slider.value *= hypo1 / hypo / 10;
+            slider.value *= (hypo1 / hypo) * 2.5;
             redraw();
           }
         },
