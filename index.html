@@ -116,7 +116,7 @@
 
       #info dl {
         display: grid;
-        grid-template-columns: 30% auto;
+        grid-template-columns: 40% auto;
         margin: 0;
       }
 
@@ -175,6 +175,9 @@
       const Info = function _() {
         return `
               <dl>
+                ${(_.state.hasOwnProperty("sw") && `<dt>Screen Width</dt><dd>${_.state.sw}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("sh") && `<dt>Screen Height</dt><dd>${_.state.sh}</dd>`) || ""}
+                ${(_.state.hasOwnProperty("oo") && `<dt>Orientation</dt><dd>${_.state.oo}</dd>`) || ""}
                 ${(_.state.hasOwnProperty("tx") && `<dt>Tile X</dt><dd>${_.state.tx}</dd>`) || ""}
                 ${(_.state.hasOwnProperty("ty") && `<dt>Tile Y</dt><dd>${_.state.ty}</dd>`) || ""}
                 ${(_.state.hasOwnProperty("ux") && `<dt>Player X pos</dt><dd>${_.state.ux}</dd>`) || ""}
@@ -199,6 +202,11 @@
       };
 
       Info.render();
+      Info.setState({
+        sw: window.screen.width,
+        sh: window.screen.height,
+        oo: Math.abs(window.orientation) - 90 == 0 ? "Landscape" : "Portrait",
+      });
 
       let zoom = 1;
 
@@ -385,7 +393,7 @@
             if (hypo === undefined) {
               hypo = hypo1;
             }
-            slider.value *= hypo1 / hypo;
+            slider.value *= hypo1 / hypo / 10;
             redraw();
           }
         },
