@@ -98,19 +98,22 @@
         display: block;
         background: url("./logo.png") no-repeat;
         background-size: contain;
-        height: 100px;
-        width: 350px;
+        height: 22vw;
+        width: 77vw;
+        max-width: 350px;
+        max-height: 100px;
       }
 
       #info {
         position: absolute;
-        right: 1rem;
+        right: 0;
         bottom: 2.6rem;
         display: block;
         min-width: 16rem;
         background-color: rgba(70, 70, 70, 0.5);
         color: gold;
         padding: 0.5rem;
+        margin: 0 1rem;
         font-size: 0.825rem;
       }
 
@@ -128,19 +131,25 @@
         grid-column: 2;
         text-align: right;
       }
+
+      @media screen and (max-device-width: 380px) {
+        #info {
+          width: calc(100vw - 3rem);
+        }
+      }
     </style>
   </head>
   <body>
     <div id="mapcontainer" class="mapcontainer">
+      <canvas id="map" alt="map"></canvas>
+      <div id="npc_layer"></div>
       <span id="pagetitle">
         <div class="logo"></div>
       </span>
       <div class="slidecontainer">
         <input type="range" min="1" max="100" value="25" step="0.2" class="slider" id="slider" />
       </div>
-      <canvas id="map" alt="map"></canvas>
       <div id="player" class="creature player"></div>
-      <div id="npc_layer"></div>
       <div id="info"></div>
     </div>
     <script>
@@ -376,7 +385,7 @@
 
       function onContainerMouseWheel(event) {
         event = event ? event : window.event;
-        slider.value -= event.detail ? event.detail * -1 : event.wheelDelta / 8;
+        slider.value -= event.detail ? event.detail * -1 : event.wheelDelta / 10;
         redraw();
       }
 
@@ -388,12 +397,19 @@
         "touchmove",
         function (event) {
           let touches = event.targetTouches;
+          /*
+          touches = [
+            { pageX: touches[0].pageX, pageY: touches[0].pageY },
+            { pageX: 0, pageY: 0 },
+          ];*/
+
           if (touches.length === 2) {
             let hypo1 = Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
             if (hypo === undefined) {
               hypo = hypo1;
             }
-            slider.value *= (hypo1 / hypo) * 2.5;
+
+            slider.value *= hypo1 / hypo;
             redraw();
           }
         },
