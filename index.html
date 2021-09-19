@@ -211,15 +211,16 @@
       };
 
       Info.render();
-      Info.setState({
-        sw: window.screen.width,
-        sh: window.screen.height,
-        oo: Math.abs(window.orientation) - 90 == 0 ? "Landscape" : "Portrait",
-      });
 
       let zoom = 1;
 
       const redraw = () => {
+        Info.setState({
+          sw: window.screen.width,
+          sh: window.screen.height,
+          oo: Math.abs(window.orientation) - 90 == 0 ? "Landscape" : "Portrait",
+        });
+
         if (userX > BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid + 1)) {
           userX = BLOCKSIZE * (BLOCKLIMITS.X.max - BLOCKLIMITS.X.mid + 1);
         }
@@ -350,8 +351,6 @@
         });
       };
 
-      window.onresize = window.onload = slider.oninput = redraw;
-
       fetch("./npcs.json")
         .then(function (response) {
           if (response.status !== 200) {
@@ -389,6 +388,11 @@
         redraw();
       }
 
+      slider.oninput = redraw;
+
+      window.addEventListener("load", redraw);
+      window.addEventListener("resize", redraw);
+      window.addEventListener("orientationchange", redraw);
       window.addEventListener("mousewheel", onContainerMouseWheel);
       window.addEventListener("DOMMouseScroll", onContainerMouseWheel);
 
