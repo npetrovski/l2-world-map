@@ -343,6 +343,7 @@
           npc_layer.appendChild(npcDom);
           npcDom.addEventListener("click", (e) => {
             e.stopPropagation();
+            e.target.style.borderColor = "lightblue";
             Info.setState({ npcName: npc.name, npcX: npc.xpos, npcY: npc.ypos });
           });
 
